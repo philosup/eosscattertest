@@ -20,6 +20,7 @@ var EosApi = require('eosjs-api');
 var Eos = require('eosjs');
 
 //https://github.com/CryptoLions/EOS-Jungle-Testnet#bp-nodes-information
+var endpoint_mainnet = 'https://user-api.eoseoul.io:443';//eoseoul.io
 var endpoint = 'http://testnet01.eoseoul.io:8801';//eoseoul.io
 // var endpoint = 'http://193.93.219.219:8888';//Tiger, CryptoLions.io
 eos_config = {
@@ -42,9 +43,38 @@ var eos_api = EosApi({
 });
 var eos = Eos(eos_config);
 
+
+
+eos_config_mainnet = {
+    httpEndpoint: endpoint_mainnet,
+   chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
+   keyProvider: [  ],
+   sign: false,
+   debuf: false
+};
+var eos_api_mainnet = EosApi({
+    httpEndpoint: endpoint_mainnet
+});
+var eos_mainnet = Eos(eos_config_mainnet);
+
 app.use(globalCSP);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
+app.get('/mainnet', function(req, res){
+    eos_api_mainnet.getInfo({}).then(result => {
+        res.send(JSON.stringify(result, null, 2));
+    });
+    // eos_api_mainnet.getCode(req.params.account, true).then(result => {
+    //     res.send(JSON.stringify(result, null, 2));
+    // });
+});app.get('/mainnet/getcode/:account', function(req, res){
+    eos_mainnet.contract(req.params.account).then(result => {
+        res.send(JSON.stringify(result, null, 2));
+    });
+    // eos_api_mainnet.getCode(req.params.account, true).then(result => {
+    //     res.send(JSON.stringify(result, null, 2));
+    // });
+});
 app.get('/', function(req, res){
    eos_api.getInfo({}).then(result => {
       //console.log(JSON.stringify(result, null, 2));
@@ -114,7 +144,14 @@ app.get('/transfer/:from/:to/:amount', function(req, res){
         res.send(JSON.stringify(result, null, 2));
         });
 });
-
+app.get('/transfertoken/:code/:from/:to/:amount', function(req, res){
+    eos.contract(req.params.code).then(function(eosio){
+          return eosio.transfer(req.params.from, req.params.to, req.params.amount, {authorization:[req.params.from+'@active']});
+          })
+    .then(function(result){
+          res.send(JSON.stringify(result, null, 2));
+          });
+  });
 app.get('/scatter/:account', function(req, res){
     res.render()
   document.addEventListener('scatterLoaded', scatterExtension => {
